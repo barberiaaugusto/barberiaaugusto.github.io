@@ -572,6 +572,7 @@
       box-shadow: 0 16px 40px rgba(0, 0, 0, .6); transition: opacity .25s, transform .25s; white-space: nowrap; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis;
     }
     .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    .toast.largo { white-space: normal; text-align: center; border-radius: 18px; line-height: 1.45; width: max-content; overflow: visible; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -923,12 +924,13 @@
     }
     function limpiarMensaje() { $("mensaje").hidden = true; $("mensaje").replaceChildren(); }
 
-    function aviso(texto) {
+    function aviso(texto, ms) {
       const t = $("toast");
       t.textContent = texto;
+      t.classList.toggle("largo", !!ms);
       t.classList.add("visible");
       clearTimeout(aviso.t);
-      aviso.t = setTimeout(function () { t.classList.remove("visible"); }, 3200);
+      aviso.t = setTimeout(function () { t.classList.remove("visible"); }, ms || 3200);
     }
 
     // Ventana "¿Estás seguro?" (reemplaza al confirm del navegador)
@@ -2065,17 +2067,26 @@
         botones.forEach(function (b) { b.hidden = true; });
         if (flotante) flotante.hidden = true;
       }
-      window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); evento = e; mostrar(); });
+      window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); evento = e; });
       window.addEventListener("appinstalled", function () { ocultar(); evento = null; });
-      if (esIOS) mostrar();
+      // Siempre visible (salvo que ya esté instalada): si el navegador no deja abrir el aviso directo, se explica cómo instalarla
+      mostrar();
+      const enApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|MicroMessenger|Snapchat|TikTok/i.test(navigator.userAgent);
+      const esAndroid = /android/i.test(navigator.userAgent);
       async function instalar(e) {
         e.preventDefault();
         if (evento) {
           evento.prompt();
           try { await evento.userChoice; } catch (err) { /* sin respuesta */ }
           evento = null; ocultar();
+        } else if (enApp) {
+          aviso(esIOS ? "Abrí este link en Safari (tocá ··· o el ícono de la brújula) y después tocá Instalar app." : "Abrí este link en Chrome (menú ⋮, Abrir en el navegador) y después tocá Instalar app.", 9000);
         } else if (esIOS) {
-          aviso('En el iPhone: tocá el botón Compartir y elegí "Agregar a inicio".');
+          aviso('En el iPhone: tocá el botón Compartir y elegí "Agregar a inicio".', 9000);
+        } else if (esAndroid) {
+          aviso('Tocá el menú ⋮ del navegador y elegí "Instalar app" o "Agregar a la pantalla principal".', 9000);
+        } else {
+          aviso("En la computadora: buscá el ícono de instalar en la barra de direcciones, o en el menú del navegador elegí Instalar.", 9000);
         }
       }
       botones.forEach(function (b) { b.onclick = instalar; });
