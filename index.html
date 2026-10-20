@@ -514,6 +514,35 @@
     @media (max-width: 640px) { .flotante.escondido { opacity: 0; transform: translateY(24px) scale(.9); pointer-events: none; } }
     @media (max-width: 640px) { .flotante { width: 58px; padding: 0; } .flotante .wa-texto { display: none; } }
 
+    /* ============ BOTÓN INSTALAR APP ============ */
+    .btn-instalar { background: var(--oro-grad); color: #17130a; border-color: rgba(255, 255, 255, .35); animation: latido 2.6s ease-in-out infinite; }
+    .btn-instalar:hover { transform: translateY(-2px); }
+    .btn-instalar svg { width: 20px; height: 20px; }
+    @keyframes latido {
+      0%, 100% { box-shadow: 0 12px 30px -12px rgba(201, 162, 75, .6), 0 0 0 0 rgba(201, 162, 75, .55); }
+      50% { box-shadow: 0 12px 30px -12px rgba(201, 162, 75, .6), 0 0 0 12px rgba(201, 162, 75, 0); }
+    }
+    .instalar-flotante {
+      position: fixed; left: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 45; display: flex; align-items: center;
+      border-radius: 999px; background: var(--oro-grad); box-shadow: 0 14px 30px -10px rgba(201, 162, 75, .6), 0 10px 26px rgba(0, 0, 0, .5);
+      transition: transform .3s, opacity .3s;
+    }
+    .instalar-flotante[hidden] { display: none; }
+    .instalar-flotante .if-boton {
+      display: inline-flex; align-items: center; gap: 10px; height: 58px; padding: 0 8px 0 20px; background: none; border: 0; cursor: pointer;
+      color: #17130a; font: 700 15px var(--sans); -webkit-tap-highlight-color: transparent;
+    }
+    .instalar-flotante .if-boton svg { width: 22px; height: 22px; }
+    .instalar-flotante .if-cerrar {
+      width: 40px; height: 40px; margin-right: 9px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+      background: rgba(23, 19, 10, .16); color: #17130a; -webkit-tap-highlight-color: transparent;
+    }
+    .instalar-flotante .if-cerrar svg { width: 16px; height: 16px; }
+    .instalar-flotante.en-portada { opacity: 0; transform: translateY(24px) scale(.9); pointer-events: none; }
+    @media (max-width: 640px) { .instalar-flotante.escondido { opacity: 0; transform: translateY(24px) scale(.9); pointer-events: none; } }
+    @media (max-width: 400px) { .instalar-flotante .if-boton { padding-left: 16px; font-size: 14px; } }
+    @media (prefers-reduced-motion: reduce) { .btn-instalar { animation: none; } }
+
     /* ============ VISOR DE FOTOS ============ */
     .visor { position: fixed; inset: 0; z-index: 120; background: rgba(5, 5, 5, .97); display: flex; align-items: center; justify-content: center; padding: 70px 16px 90px; animation: aparecer .25s ease; }
     .visor figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 100%; }
@@ -582,6 +611,10 @@
         <div class="hero-ctas">
           <a href="#reservas" class="btn btn-oro" id="ctaReservar">Reservar turno</a>
           <a href="#servicios" class="btn btn-borde" id="ctaServicios">Ver servicios</a>
+          <button type="button" class="btn btn-instalar" id="instalarHero" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v7M9 12l3 3 3-3"/></svg>
+            Instalar la app
+          </button>
         </div>
         <div><button type="button" id="proximo" class="proximo" hidden></button></div>
       </div>
@@ -738,6 +771,15 @@
         <a href="#reservas">Reservar turno</a>
         <a href="#contacto">Horarios y contacto</a>
         <a href="#" id="instalarApp" hidden>Instalar app</a>
+      </div>
+      <div class="instalar-flotante" id="instalarFlotante" hidden>
+        <button type="button" class="if-boton" id="instalarFlot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v7M9 12l3 3 3-3"/></svg>
+          Instalar app
+        </button>
+        <button type="button" class="if-cerrar" id="instalarCerrar" aria-label="Ocultar el botón de instalar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
       </div>
       <div class="pie-copy">© <span id="anio"></span> <span id="pieNombre2"></span>. Todos los derechos reservados.</div>
       <div class="firma">
@@ -2006,25 +2048,55 @@
       // ---------- Instalar como app (celular o computadora) ----------
     (function () {
       if ("serviceWorker" in navigator) window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
-      const enlace = $("instalarApp");
-      if (!enlace) return;
+      const botones = [$("instalarHero"), $("instalarFlot"), $("instalarApp")].filter(Boolean);
+      const flotante = $("instalarFlotante");
+      if (!botones.length) return;
       const instalada = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone;
       if (instalada) return;
       const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
       let evento = null;
-      window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); evento = e; enlace.hidden = false; });
-      window.addEventListener("appinstalled", function () { enlace.hidden = true; evento = null; });
-      if (esIOS) enlace.hidden = false;
-      enlace.onclick = async function (e) {
+      let cerrado = false;
+      try { cerrado = sessionStorage.getItem("instalar_cerrado") === "1"; } catch (e) {}
+      function mostrar() {
+        botones.forEach(function (b) { b.hidden = false; });
+        if (flotante) flotante.hidden = cerrado;
+      }
+      function ocultar() {
+        botones.forEach(function (b) { b.hidden = true; });
+        if (flotante) flotante.hidden = true;
+      }
+      window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); evento = e; mostrar(); });
+      window.addEventListener("appinstalled", function () { ocultar(); evento = null; });
+      if (esIOS) mostrar();
+      async function instalar(e) {
         e.preventDefault();
         if (evento) {
           evento.prompt();
           try { await evento.userChoice; } catch (err) { /* sin respuesta */ }
-          evento = null; enlace.hidden = true;
+          evento = null; ocultar();
         } else if (esIOS) {
           aviso('En el iPhone: tocá el botón Compartir y elegí "Agregar a inicio".');
         }
+      }
+      botones.forEach(function (b) { b.onclick = instalar; });
+      const cerrar = $("instalarCerrar");
+      if (cerrar) cerrar.onclick = function () {
+        cerrado = true;
+        try { sessionStorage.setItem("instalar_cerrado", "1"); } catch (e) {}
+        if (flotante) flotante.hidden = true;
       };
+      // El flotante aparece recién cuando el botón de la portada ya no se ve
+      const hero = $("instalarHero");
+      if (hero && flotante && "IntersectionObserver" in window) {
+        new IntersectionObserver(function (es) { flotante.classList.toggle("en-portada", es[0].isIntersecting); }).observe(hero);
+      }
+      // El botón flotante se corre cuando el cliente está en la sección de reservas, igual que el de WhatsApp
+      const wa = document.querySelector(".flotante");
+      if (wa && flotante && "MutationObserver" in window) {
+        const sync = function () { flotante.classList.toggle("escondido", wa.classList.contains("escondido")); };
+        new MutationObserver(sync).observe(wa, { attributes: true, attributeFilter: ["class"] });
+        sync();
+      }
     })();
   </script>
 </body>
