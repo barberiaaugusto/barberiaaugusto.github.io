@@ -1610,38 +1610,19 @@
       datosParaGoogle(a);
     }
 
-    // Mapa: se geocodifica la dirección (Nominatim) y se embebe OpenStreetMap.
-    // Google ya no permite su mapa embebido sin clave, por eso no se usa un iframe suyo.
-    function armarMapa(direccion) {
-      const caja = $("mapa");
-      const q = encodeURIComponent(direccion);
-      const verEnGoogle = function () {
-        const a = el("a", "", "Ver ubicación en Google Maps");
-        a.href = "https://www.google.com/maps/search/?api=1&query=" + q;
-        a.target = "_blank"; a.rel = "noopener";
-        a.style.cssText = "display:flex;align-items:center;justify-content:center;height:100%;color:var(--oro-claro);text-decoration:underline;padding:16px;text-align:center";
-        caja.replaceChildren(a);
-      };
-      const poner = function (lat, lon) {
-        const d = 0.004;
-        const bbox = [lon - d, lat - d, lon + d, lat + d].join("%2C");
-        const mapa = el("iframe");
-        mapa.src = "https://www.openstreetmap.org/export/embed.html?bbox=" + bbox + "&layer=mapnik&marker=" + lat + "%2C" + lon;
-        mapa.title = "Mapa: " + direccion;
-        mapa.referrerPolicy = "no-referrer-when-downgrade";
-        caja.replaceChildren(mapa);
-      };
-      const clave = "mapa:" + direccion;
-      try { const g = JSON.parse(localStorage.getItem(clave) || "null"); if (g) return poner(g[0], g[1]); } catch (e) {}
-      fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=" + q)
-        .then(function (r) { return r.json(); })
-        .then(function (r) {
-          if (!r || !r.length) throw new Error("sin resultados");
-          const lat = parseFloat(r[0].lat), lon = parseFloat(r[0].lon);
-          try { localStorage.setItem(clave, JSON.stringify([lat, lon])); } catch (e) {}
-          poner(lat, lon);
-        })
-        .catch(function () { console.warn("No se pudo armar el mapa"); verEnGoogle(); });
+    // Mapa de Google embebido. Si en ajustes hay "mapa_embed" (el link de Compartir > Insertar un mapa)
+    // se usa tal cual; si no, se arma con la dirección.
+    function armarMapa(direccion, embed) {
+      const mapa = el("iframe");
+      const oficial = /^https:\/\/www\.google\.com\/maps\/embed\?/i.test(String(embed || "").trim());
+      mapa.src = oficial
+        ? String(embed).trim()
+        : "https://www.google.com/maps?q=" + encodeURIComponent(direccion) + "&z=16&hl=es&output=embed";
+      mapa.title = "Mapa: " + direccion;
+      mapa.loading = "lazy";
+      mapa.allowFullscreen = true;
+      mapa.referrerPolicy = "no-referrer-when-downgrade";
+      $("mapa").replaceChildren(mapa);
     }
 
     // Datos para que Google entienda el negocio (no se ven en la página)
