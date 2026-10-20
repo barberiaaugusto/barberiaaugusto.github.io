@@ -773,15 +773,6 @@
         <a href="#contacto">Horarios y contacto</a>
         <a href="#" id="instalarApp" hidden>Instalar app</a>
       </div>
-      <div class="instalar-flotante" id="instalarFlotante" hidden>
-        <button type="button" class="if-boton" id="instalarFlot">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v7M9 12l3 3 3-3"/></svg>
-          Instalar app
-        </button>
-        <button type="button" class="if-cerrar" id="instalarCerrar" aria-label="Ocultar el botón de instalar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
       <div class="pie-copy">© <span id="anio"></span> <span id="pieNombre2"></span>. Todos los derechos reservados.</div>
       <div class="firma">
         <span>Sitio y sistema de reservas por</span>
@@ -790,6 +781,17 @@
       </div>
     </div>
   </footer>
+
+  <!-- Botón flotante de instalar la app -->
+  <div class="instalar-flotante" id="instalarFlotante" hidden>
+    <button type="button" class="if-boton" id="instalarFlot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v7M9 12l3 3 3-3"/></svg>
+      Instalar app
+    </button>
+    <button type="button" class="if-cerrar" id="instalarCerrar" aria-label="Ocultar el botón de instalar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
 
   <a id="wa" class="flotante" target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp" hidden><span data-icono="chat"></span><span class="wa-texto">WhatsApp</span></a>
 
@@ -2057,7 +2059,7 @@
       if (token && uuid.test(token)) cargarMiTurno(token, !!desdeLink);
     }
     iniciar();
-      // ---------- Instalar como app (celular o computadora) ----------
+    // ---------- Instalar como app (celular o computadora) ----------
     (function () {
       if ("serviceWorker" in navigator) window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
       const botones = [$("instalarHero"), $("instalarFlot"), $("instalarApp")].filter(Boolean);
