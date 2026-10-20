@@ -471,7 +471,7 @@
     .direccion { display: flex; gap: 10px; color: var(--texto); margin: 0 0 16px; }
     .direccion svg { width: 19px; height: 19px; color: var(--oro); margin-top: 3px; }
     .mapa { border-radius: 16px; overflow: hidden; border: 1px solid var(--borde); aspect-ratio: 16 / 10; background: #121212; margin-bottom: 18px; }
-    .mapa iframe { width: 100%; height: 100%; border: 0; display: block; filter: grayscale(.25) invert(.9) hue-rotate(180deg) contrast(.92) brightness(.95); }
+    .mapa iframe { width: 100%; height: 100%; border: 0; display: block; }
     .contacto-botones { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
     .btn-fila {
       display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 16px; text-decoration: none;
@@ -1599,10 +1599,10 @@
         $("filaDireccion").hidden = false;
         $("textoDireccion").textContent = a.direccion;
         const mapa = el("iframe");
-        mapa.src = "https://www.google.com/maps?q=" + encodeURIComponent(a.direccion) + "&output=embed";
-        mapa.loading = "lazy";
+        mapa.src = "https://maps.google.com/maps?q=" + encodeURIComponent(a.direccion) + "&z=16&hl=es&output=embed";
         mapa.title = "Mapa: " + a.direccion;
         mapa.referrerPolicy = "no-referrer-when-downgrade";
+        mapa.allowFullscreen = true;
         $("mapa").replaceChildren(mapa);
         cont.appendChild(botonFila("", "ubicacion", "Cómo llegar", a.direccion, "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(a.direccion)));
       }
