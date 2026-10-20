@@ -1598,7 +1598,7 @@
       if (a.direccion) {
         $("filaDireccion").hidden = false;
         $("textoDireccion").textContent = a.direccion;
-        armarMapa(a.direccion);
+        armarMapa(a.direccion, a.mapa_embed);
         cont.appendChild(botonFila("", "ubicacion", "Cómo llegar", a.direccion, "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(a.direccion)));
       }
       if (a.politica) { $("politica").textContent = a.politica; $("politica").hidden = false; }
