@@ -448,6 +448,11 @@
     .form-opinion textarea.input { height: auto; min-height: 96px; padding: 12px 16px; resize: vertical; line-height: 1.5; }
     .form-opinion .btn { margin-top: 12px; }
 
+    /* ============ LISTA DE ESPERA ============ */
+    .lista-espera { margin-top: 18px; padding: 18px; border: 1px dashed var(--borde-2); display: grid; gap: 10px; }
+    .lista-espera h4 { margin: 0; font: 600 17px var(--sans); }
+    .lista-espera .aviso { margin: 0 0 4px; }
+
     /* ============ HORARIOS Y CONTACTO ============ */
     .contacto-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
     @media (min-width: 900px) { .contacto-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; } }
@@ -1282,7 +1287,8 @@
         const activo = sel.dia && fechaISO(sel.dia) === fechaISO(d);
         const b = el("button", "dia");
         b.type = "button";
-        b.disabled = sinTurnos;
+        // Un día completo (no cerrado) se puede abrir para anotarse en la lista de espera
+        b.disabled = sinTurnos && (cerrado || i === 0);
         b.setAttribute("aria-pressed", activo ? "true" : "false");
         b.setAttribute("aria-label", cap(fechaLinda(d)) + (sinTurnos ? (cerrado ? ", cerrado" : ", sin horarios libres") : ""));
         b.appendChild(el("span", "d-sem", i === 0 ? "Hoy" : nombresCortos[d.getDay()]));
@@ -1322,7 +1328,11 @@
         return;
       }
       const horas = generarHoras(sel.dia, sel.servicio);
-      if (!horas.length) { cont.appendChild(el("p", "aviso", "No quedan horarios libres para este día. Probá con otro.")); return; }
+      if (!horas.length) {
+        cont.appendChild(el("p", "aviso", "No quedan horarios libres para este día. Probá con otro."));
+        if (franjasDia(sel.dia.getDay()).length && fechaISO(sel.dia) > fechaISO(new Date())) cont.appendChild(formularioEspera());
+        return;
+      }
       const grupos = [
         ["Mañana", function (m) { return m < 13 * 60; }],
         ["Tarde", function (m) { return m >= 13 * 60 && m < 20 * 60; }],
@@ -1346,6 +1356,44 @@
         });
         cont.appendChild(grilla);
       });
+    }
+
+    // Lista de espera: si el día está completo, la persona deja sus datos y el negocio le avisa si se libera un lugar
+    function formularioEspera() {
+      const f = el("div", "lista-espera");
+      f.appendChild(el("h4", "", "¿Querés que te avisemos?"));
+      f.appendChild(el("p", "aviso", "Dejá tu nombre y tu WhatsApp. Si se libera un lugar ese día, te escribimos."));
+      const nom = el("input", "input");
+      nom.type = "text"; nom.maxLength = 60; nom.placeholder = "Tu nombre"; nom.autocomplete = "name";
+      nom.setAttribute("aria-label", "Tu nombre");
+      nom.value = $("nombre").value;
+      const tel = el("input", "input");
+      tel.type = "tel"; tel.maxLength = 20; tel.placeholder = "Tu WhatsApp. Ej: 3411234567"; tel.autocomplete = "tel"; tel.inputMode = "tel";
+      tel.setAttribute("aria-label", "Tu WhatsApp");
+      tel.value = $("telefono").value;
+      const enviar = el("button", "btn btn-oro", "Avisarme si se libera");
+      enviar.type = "button";
+      enviar.onclick = async function () {
+        if (nom.value.trim().length < 2) { aviso("Escribí tu nombre."); return; }
+        if (soloDigitos(tel.value).length < 8) { aviso("Revisá tu WhatsApp: con código de área, sin 0 ni 15."); return; }
+        enviar.disabled = true;
+        try {
+          const r = await rpc("anotar_espera", { p_servicio_id: sel.servicio.id, p_fecha: fechaISO(sel.dia), p_nombre: nom.value, p_telefono: tel.value, p_trampa: "" });
+          if (r.ok) {
+            f.replaceChildren(el("h4", "", "¡Listo, te anotamos!"),
+              el("p", "aviso", "Si se libera un lugar, te escribimos por WhatsApp. Mientras tanto, podés elegir otro día."));
+          } else {
+            enviar.disabled = false;
+            aviso(r.error === "limite" ? "Ya estás en 3 listas de espera. Esperá a que te avisen." :
+              r.error === "demasiados" ? "Hiciste muchos intentos. Probá de nuevo más tarde." : "No pudimos anotarte. Probá de nuevo.");
+          }
+        } catch (e) {
+          enviar.disabled = false;
+          aviso("No hay conexión. Probá de nuevo.");
+        }
+      };
+      f.appendChild(nom); f.appendChild(tel); f.appendChild(enviar);
+      return f;
     }
 
     function soloDigitos(t) { return String(t || "").replace(/\D/g, ""); }
